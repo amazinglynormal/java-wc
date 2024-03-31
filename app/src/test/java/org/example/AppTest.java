@@ -3,12 +3,56 @@
  */
 package org.example;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class AppTest {
-    @Test void appHasAGreeting() {
-        App classUnderTest = new App();
-        assertNotNull(classUnderTest.getGreeting(), "app should have a greeting");
+    private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
+
+    @BeforeEach
+    void setUp() {
+        System.setOut(new PrintStream((outputStreamCaptor)));
+    }
+
+    @Test
+    void correctOutputWhenNoOptionsGiven() {
+        String[] args = new String[]{"src/test/resources/test.txt"};
+        App.main(args);
+        String expectedOutput = "8 79 428 src/test/resources/test.txt";
+        assertEquals(expectedOutput, outputStreamCaptor.toString().trim());
+    }
+
+    @Test
+    void correctOutputWhenNoOptionsGivenWithMultipleFiles() {
+        String[] args = new String[]{"src/test/resources/test.txt", "src/test/resources/test2.txt"};
+        App.main(args);
+        String expectedOutput = """
+                8 79 428 src/test/resources/test.txt
+                1 37 204 src/test/resources/test2.txt
+                9 116 632 total""";
+        assertEquals(expectedOutput, outputStreamCaptor.toString().trim());
+    }
+
+    @Test
+    void correctOutputWhenLineOptionGivenWithMultipleFiles() {
+        String[] args = new String[]{"-l", "src/test/resources/test.txt", "src/test/resources/test2.txt"};
+        App.main(args);
+        String expectedOutput = """
+                8 src/test/resources/test.txt
+                1 src/test/resources/test2.txt
+                9 total""";
+        assertEquals(expectedOutput, outputStreamCaptor.toString().trim());
+    }
+    @Test
+    void correctOutputWhenCharOptionGiven() {
+        String[] args = new String[]{"-m", "src/test/resources/test.txt"};
+        App.main(args);
+        String expectedOutput = "428 src/test/resources/test.txt";
+        assertEquals(expectedOutput, outputStreamCaptor.toString().trim());
     }
 }

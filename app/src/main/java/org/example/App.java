@@ -3,12 +3,100 @@
  */
 package org.example;
 
+import org.apache.commons.cli.*;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
 public class App {
-    public String getGreeting() {
-        return "Hello World!";
-    }
 
     public static void main(String[] args) {
-        System.out.println(new App().getGreeting());
+        Options options = getOptions();
+
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd;
+
+        try {
+            cmd = parser.parse(options, args);
+            wc(cmd);
+        } catch(ParseException ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    private static Options getOptions() {
+        Options options = new Options();
+        options.addOption("c", "bytes", false, "print the byte counts");
+        options.addOption("m", "chars", false, "print the character counts");
+        options.addOption("l", "lines", false, "print the newline counts");
+        options.addOption("w", "words", false, "print the word count");
+        return options;
+    }
+
+    private static void wc(CommandLine cmd) {
+        String[] args = cmd.getArgs();
+
+        long totalByteCount = 0;
+        long totalCharCount = 0;
+        int totalNewlineCount = 0;
+        int totalWordCount = 0;
+
+        for (String arg: args) {
+            File file = new File(arg);
+            long charCount = 0;
+            int wordCount = 0;
+            long byteCount = file.length();
+            int newlineCount = 0;
+            try(Scanner scanner = new Scanner(file)) {
+
+                while (scanner.hasNext()) {
+                    String line = scanner.nextLine();
+                    newlineCount++;
+                    charCount += line.toCharArray().length;
+                    if (!line.isBlank()) {
+                        wordCount += line.split("\\s+").length;
+                    }
+                }
+
+                if (newlineCount > 0) {
+                    newlineCount--;
+                }
+                // + lineCount to account for newline chars that scanner split lines on
+                charCount += newlineCount;
+
+                totalNewlineCount += newlineCount;
+                totalCharCount += charCount;
+                totalByteCount += byteCount;
+                totalWordCount += wordCount;
+
+                printResult(cmd, newlineCount, wordCount, byteCount, charCount, arg);
+            } catch(FileNotFoundException ex) {
+                System.out.println(ex.getMessage());
+            }
+        }
+        if (args.length > 1) {
+            printResult(cmd, totalNewlineCount, totalWordCount, totalByteCount, totalCharCount, "total");
+        }
+    }
+
+    private static void printResult(CommandLine cmd, int newlineCount, int wordCount, long byteCount, long charCount, String filename) {
+        if (cmd.getOptions().length == 0) {
+            System.out.println(newlineCount + " " + wordCount + " " + byteCount + " " + filename);
+        } else {
+            if (cmd.hasOption("l")) {
+                System.out.print(newlineCount + " ");
+            }
+            if (cmd.hasOption("w")) {
+                System.out.print(wordCount + " ");
+            }
+            if (cmd.hasOption("m")) {
+                System.out.print(charCount + " ");
+            }
+            if (cmd.hasOption("c")) {
+                System.out.print(byteCount + " ");
+            }
+            System.out.println(filename);
+        }
     }
 }
